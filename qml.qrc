@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>MyDial.qml</file>
+        <file>ControlPanel.qml</file>
+        <file>MultiButton.qml</file>
+        <file>ScopeView.qml</file>
+    </qresource>
+</RCC>
