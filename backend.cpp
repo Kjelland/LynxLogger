@@ -6,27 +6,77 @@
 #include <QtCore/QDebug>
 
 #include <QtCore/QtMath>
-
+#include <QTime>
 BackEnd::BackEnd(QObject *parent) :
     QObject(parent),
     _lynx(0x25),
     _uart(_lynx),
     _controlDatagram(_lynx, 0x22,"Control Datagram"),
     _feedbackDatagram(_lynx, 0x23,"Feedback Datagram"),
-    m_index(-1)
+    m_index(-1),
+    m_loggingIndex(0)
 
 {
    //  _uart.open(4, 115200);
-
+    newDataTimer = new QTimer(this);
+    connect(newDataTimer, SIGNAL(timeout()), this, SLOT(newData()));
+    newDataTimer->start(10);
     connect(_uart.portPointer(), SIGNAL(readyRead()), this, SLOT(readData()));
+
 
     qRegisterMetaType<QAbstractSeries*>();
     qRegisterMetaType<QAbstractAxis*>();
+    QVector<QPointF> points;
+    points.reserve(20000000);
 
-    generateData(0, 5, 1024);
+    logger.append(points);
+    logger.append(points);
+    logger.append(points);
+    logger.append(points);
+    logger.append(points);
+
+ //   generateData(0, 5, 1024);
 }
 
+void BackEnd::newData()
+{
+    emit rollChanged();
+    emit pitchChanged();
+    emit yawChanged();
 
+    QDateTime momentInTime = QDateTime::currentDateTime();
+
+    logger[0].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10* qSin(momentInTime.toMSecsSinceEpoch()/1000.0*6.0/10.0)+double(roll())));
+    logger[1].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qCos(momentInTime.toMSecsSinceEpoch()/1000.0*6/10)+pitch()));
+    logger[2].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
+    logger[3].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
+    logger[4].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
+
+    m_loggingIndex--;
+
+    //qDebug()<<"time: "<<time.msecsSinceStartOfDay();
+    //qDebug()<<time;
+
+
+}
+void BackEnd::removeSignal()
+{
+
+}
+void BackEnd::addSignal()
+{
+    QVector<QPointF> points;
+    points.reserve(20000000);
+    logger.append(points);
+    loggerInfo info;
+    info.name = "Test";
+    info.unit = "m/s";
+
+    info.index = logger.count();
+
+    loggerInformation.append(info);
+    qDebug()<<"new append: ";
+}
 
 void BackEnd::sendData()
 {
@@ -68,7 +118,8 @@ void BackEnd::readData()
 
 void BackEnd::enableYawButtonClicked(bool state)
 {
-    qDebug()<<"state is: "<<state;
+
+
     if(state)
         _controlDatagram.command = 12;
     else {
@@ -79,9 +130,7 @@ void BackEnd::enableYawButtonClicked(bool state)
 void BackEnd::gyroConnectButtonClicked(bool state)
 {
     qDebug()<<"state is: "<<state;
-    emit rollChanged();
-    emit pitchChanged();
-    emit yawChanged();
+
     if(state)
         _controlDatagram.command = 10;
     else {
@@ -136,50 +185,32 @@ void BackEnd::connectButtonClicked()
     }
 
 }
-void BackEnd::update(QAbstractSeries *series)
+
+
+void BackEnd::update(QAbstractSeries *series,int index)
 {
 
     if (series) {
         QXYSeries *xySeries = static_cast<QXYSeries *>(series);
+
         m_index++;
-        if (m_index > m_data.count() - 1)
+        if (m_index > logger.count() - 1)
             m_index = 0;
 
-        QVector<QPointF> points = m_data.at(m_index);
+        QVector<QPointF> points = logger.at(index);
+        if(points.last().y()>max)
+        {
+            max=points.last().y();
+
+        }
+        if(points.last().y()<min)
+        {
+            min=points.last().y();
+
+        }
         // Use replace instead of clear + append, it's optimized for performance
         xySeries->replace(points);
-    }
-}
-void BackEnd::generateData(int type, int rowCount, int colCount)
-{
-    // Remove previous data
-    m_data.clear();
 
-    // Append the new data depending on the type
-    for (int i(0); i < rowCount; i++) {
-        QVector<QPointF> points;
-        points.reserve(colCount);
-        for (int j(0); j < colCount; j++) {
-            qreal x(0);
-            qreal y(0);
-            switch (type) {
-            case 0:
-                // data with sin + random component
-                y = qSin(M_PI / 50 * j) + 0.5 + QRandomGenerator::global()->generateDouble();
-                x = j;
-                break;
-            case 1:
-                // linear data
-                x = j;
-                y = (qreal) i / 10;
-                break;
-            default:
-                // unknown, do nothing
-                break;
-            }
-            points.append(QPointF(x, y));
-        }
-        m_data.append(points);
 
     }
 }

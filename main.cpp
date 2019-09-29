@@ -10,7 +10,8 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     QQuickView viewer;
-    BackEnd backend(&viewer);
+
+   BackEnd backend(&viewer);
 
     viewer.rootContext()->setContextProperty("backend", &backend);
 #ifdef Q_OS_WIN
@@ -18,16 +19,17 @@ int main(int argc, char *argv[])
 #else
     QString extraImportPath(QStringLiteral("%1/../../../%2"));
 #endif
-    viewer.engine()->addImportPath(extraImportPath.arg(QGuiApplication::applicationDirPath(),
-                                      QString::fromLatin1("qml")));
+   // viewer.engine()->addImportPath(extraImportPath.arg(QGuiApplication::applicationDirPath(),QString::fromLatin1("qml")));
     QObject::connect(viewer.engine(), &QQmlEngine::quit, &viewer, &QWindow::close);
 
-    viewer.setTitle(QStringLiteral("QML Oscilloscope"));
+    viewer.setTitle(QStringLiteral("Lynx Logger"));
 
-qmlRegisterType<BackEnd>("backend", 1, 1, "BackEnd");
+    qmlRegisterType<BackEnd>("backend", 1, 1, "BackEnd");
 
     viewer.setSource(QUrl("qrc:/main.qml"));
-    viewer.setResizeMode(QQuickView::SizeRootObjectToView);
+    viewer.setMinimumSize(QSize(200,200));
+
+   // viewer.setResizeMode(QQuickView::SizeRootObjectToView);
     //viewer.setColor(QColor("#404040"));
     viewer.show();
 

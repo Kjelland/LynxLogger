@@ -17,18 +17,18 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     backend.cpp \
         main.cpp\
-        "../LynxStructure/lynxiodevice.cpp" \
-        "../LynxStructure/lynxstructure.cpp" \
-        "../LynxStructure/lynxuartqt.cpp" \
-        "../LynxStructure/lynxlistclasses.cpp" \
+        "../../LynxStructure/lynxiodevice.cpp" \
+        "../../LynxStructure/lynxstructure.cpp" \
+        "../../LynxStructure/lynxuartqt.cpp" \
+        "../../LynxStructure/lynxlistclasses.cpp" \
 
 RESOURCES += qml.qrc
 
-HEADERS +=  "../LynxStructure/lynxstructure.h" \
-            "../LynxStructure/lynxiodevice.h" \
-            "../LynxStructure/lynxuartqt.h" \
-            "../LynxStructure/lynxlistclasses.h" \
-            "../Stewart/Arduino/miniStew/datagram/stewartcontrol.h"\
+HEADERS +=  "../../LynxStructure/lynxstructure.h" \
+            "../../LynxStructure/lynxiodevice.h" \
+            "../../LynxStructure/lynxuartqt.h" \
+            "../../LynxStructure/lynxlistclasses.h" \
+            "../../Stewart/Arduino/miniStew/datagram/stewartcontrol.h"\
     backend.h
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
@@ -43,8 +43,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 INCLUDEPATH += \
-    "../LynxStructure"\
-    "../Stewart/Arduino/miniStew/datagram"
+    "../../LynxStructure"\
+    "../../Stewart/Arduino/miniStew/datagram"
 
 
 DISTFILES +=

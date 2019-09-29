@@ -7,6 +7,7 @@
 #include "lynxuartqt.h"
 #include "stewartcontrol.h"
 #include <QtCore/QRandomGenerator>
+#include <QTimer>
 // #include "teststruct.h"
 
 #include <QtCharts/QAbstractSeries>
@@ -28,7 +29,7 @@ class BackEnd : public QObject
     Q_PROPERTY(float yaw READ yaw  NOTIFY yawChanged)
     Q_PROPERTY(int sta READ sta  NOTIFY yawChanged)
 
-
+    QTimer* newDataTimer;
 
 
 
@@ -46,11 +47,25 @@ class BackEnd : public QObject
     unsigned long _baudrate = 115200;
 
     bool updateDial;
-
+    QList<QVector<QPointF> > logger;
     QList<QVector<QPointF> > m_data;
+    struct loggerInfo
+    {
+        int index;
+        QString name;
+        QString unit;
+        int *dataPointer;
+    };
+
+    QList<loggerInfo> loggerInformation;
     int m_index;
+    int m_loggingIndex;
+
+
 
 public:
+    void addSignal();
+    void removeSignal();
     enum E_variable{
         Ex,
         Ey,
@@ -63,12 +78,13 @@ public:
     explicit BackEnd(QObject *parent = nullptr);
     ~BackEnd() { _uart.close(); }
 
-    float roll() const { return  10*QRandomGenerator::global()->generateDouble();}//_feedbackDatagram.imuRoll; }
-    float pitch() const { return 10*QRandomGenerator::global()->generateDouble();}//_feedbackDatagram.imuPitch; }
-    float yaw() const { return 10*QRandomGenerator::global()->generateDouble();}//_feedbackDatagram.imuYaw; }
+    float roll() const { return  1*QRandomGenerator::global()->generateDouble();}//_feedbackDatagram.imuRoll; }
+    float pitch() const { return 1*QRandomGenerator::global()->generateDouble();}//_feedbackDatagram.imuPitch; }
+    float yaw() const { return 1*QRandomGenerator::global()->generateDouble();}//_feedbackDatagram.imuYaw; }
 
     int sta() const {return _feedbackDatagram.sta;}
-
+    double max;
+    double min;
 
 
 
@@ -79,12 +95,14 @@ signals:
     void rollChanged();
     void pitchChanged();
     void yawChanged();
-
     void getData(float input,E_variable variable);
 
 public slots:
-    void generateData(int type, int rowCount, int colCount);
-    void update(QAbstractSeries *series);
+    void newData();
+    float getMax(){return max;};
+    float getMin(){return min;};
+    //void generateData(int type, int rowCount, int colCount);
+    void update(QAbstractSeries *series,int index);
     void setData(float input,E_variable var)
     {
         qDebug()<<input << " as "<<var;

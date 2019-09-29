@@ -9,8 +9,6 @@ Item
     visible: true
     width: 1000
     height: 600
-    //title: qsTr("Stewie Control")
-
 
     Row
     {
@@ -102,12 +100,18 @@ Item
             checked: backEnd.sta & (1<<3)
         }
 
+        Button{
+            id:autoscale
+            onClicked: scopeView.autoscale(true)
+        }
+
 
     }
-
     BackEnd
     {
         id: backEnd
+
+
         onGetData: {
             switch (variable)
             {
@@ -158,12 +162,8 @@ Item
         anchors.leftMargin: 0
         //![1]
 
-        onSignalSourceChanged: {
-            if (source == "sin")
-                backend.generateData(0, signalCount, sampleCount);
-            else
-                backend.generateData(1, signalCount, sampleCount);
-            scopeView.axisX().max = sampleCount;
+        onSampleChanged: {
+            scopeView.nMin = count;
         }
         onSeriesTypeChanged: scopeView.changeSeriesType(type);
         onRefreshRateChanged: scopeView.changeRefreshRate(rate);
@@ -311,6 +311,8 @@ Item
 
 
 }
+
+
 
 
 
