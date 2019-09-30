@@ -44,6 +44,7 @@ ChartView {
     property var xaxis: new Date()
     property var xaxis_min: new Date()
     property var nMin : 1
+    property var deltaX :10000 //10*1000ms delta time
     onOpenGLChanged: {
         if (openGLSupported) {
             series("signal 1").useOpenGL = openGL;
@@ -58,35 +59,35 @@ ChartView {
     }
 
     Rectangle{
-    id: rubberBandRec1
-    border.color: "black"
-    border.width: 1
-    opacity: 0.3
-    visible: false
-    transform: Scale { origin.x: 0; origin.y: 0; yScale: -1}
+        id: rubberBandRec1
+        border.color: "black"
+        border.width: 1
+        opacity: 0.3
+        visible: false
+        transform: Scale { origin.x: 0; origin.y: 0; yScale: -1}
     }
     Rectangle{
-    id: rubberBandRec2
-    border.color: "black"
-    border.width: 1
-    opacity: 0.3
-    visible: false
-    transform: Scale { origin.x: 0; origin.y: 0; yScale: -1; xScale: -1}
+        id: rubberBandRec2
+        border.color: "black"
+        border.width: 1
+        opacity: 0.3
+        visible: false
+        transform: Scale { origin.x: 0; origin.y: 0; yScale: -1; xScale: -1}
     }
     Rectangle{
-    id: rubberBandRec3
-    border.color: "black"
-    border.width: 1
-    opacity: 0.3
-    visible: false
-    transform: Scale { origin.x: 0; origin.y: 0; xScale: -1}
+        id: rubberBandRec3
+        border.color: "black"
+        border.width: 1
+        opacity: 0.3
+        visible: false
+        transform: Scale { origin.x: 0; origin.y: 0; xScale: -1}
     }
     Rectangle{
-    id: rubberBandRec4
-    border.color: "black"
-    border.width: 1
-    opacity: 0.3
-    visible: false
+        id: rubberBandRec4
+        border.color: "black"
+        border.width: 1
+        opacity: 0.3
+        visible: false
     }
     MouseArea{
         property bool hasBeenPressedAndHoled: false
@@ -96,76 +97,85 @@ ChartView {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onPressed: {
-            rubberBandRec1.x = mouseX; rubberBandRec1.y = mouseY; rubberBandRec1.visible = true;
-            rubberBandRec2.x = mouseX; rubberBandRec2.y = mouseY; rubberBandRec2.visible = true;
-            rubberBandRec3.x = mouseX; rubberBandRec3.y = mouseY; rubberBandRec3.visible = true;
-            rubberBandRec4.x = mouseX; rubberBandRec4.y = mouseY; rubberBandRec4.visible = true;
-            console.log("pressed");
-            hasBeenPressedAndHoled=true
+            if(mouse.button === Qt.LeftButton)
+            {
+                rubberBandRec1.x = mouseX; rubberBandRec1.y = mouseY; rubberBandRec1.visible = true;
+                rubberBandRec2.x = mouseX; rubberBandRec2.y = mouseY; rubberBandRec2.visible = true;
+                rubberBandRec3.x = mouseX; rubberBandRec3.y = mouseY; rubberBandRec3.visible = true;
+                rubberBandRec4.x = mouseX; rubberBandRec4.y = mouseY; rubberBandRec4.visible = true;
+
+                hasBeenPressedAndHoled=true
+                console.log("been pressed")
+            }
 
         }
 
         onMouseXChanged: {
-        rubberBandRec1.width = mouseX - rubberBandRec1.x;
-        rubberBandRec2.width = rubberBandRec2.x-mouseX;
-        rubberBandRec3.width = rubberBandRec3.x-mouseX;
-        rubberBandRec4.width = mouseX - rubberBandRec4.x;
+            rubberBandRec1.width = mouseX - rubberBandRec1.x;
+            rubberBandRec2.width = rubberBandRec2.x-mouseX;
+            rubberBandRec3.width = rubberBandRec3.x-mouseX;
+            rubberBandRec4.width = mouseX - rubberBandRec4.x;
         }
         onMouseYChanged: {
-        rubberBandRec1.height = rubberBandRec1.y - mouseY;
-        rubberBandRec2.height = rubberBandRec2.y - mouseY;
-        rubberBandRec3.height = mouseY - rubberBandRec3.y;
-        rubberBandRec4.height = mouseY - rubberBandRec4.y;
+            rubberBandRec1.height = rubberBandRec1.y - mouseY;
+            rubberBandRec2.height = rubberBandRec2.y - mouseY;
+            rubberBandRec3.height = mouseY - rubberBandRec3.y;
+            rubberBandRec4.height = mouseY - rubberBandRec4.y;
         }
         onReleased: {
-            if(hasBeenPressedAndHoled)
+            if(hasBeenPressedAndHoled && mouse.button === Qt.LeftButton)
             {
+
+                console.log("been released")
                 var x = rubberBandRec4.x-(rubberBandRec4.width<0)*Math.abs(rubberBandRec4.width);
                 var y = rubberBandRec4.y-(rubberBandRec4.height<0)*Math.abs(rubberBandRec4.height);
                 if (Math.abs(rubberBandRec4.width*rubberBandRec4.height)>100)
-                chartView.zoomIn(Qt.rect(x, y, Math.abs(rubberBandRec4.width),
-                Math.abs(rubberBandRec4.height)));
+                    chartView.zoomIn(Qt.rect(x, y, Math.abs(rubberBandRec4.width),
+                                             Math.abs(rubberBandRec4.height)));
+                else
+                    chartView.zoomIn(Qt.rect(x-100, y-100,200,200))
                 rubberBandRec1.visible = false;
                 rubberBandRec2.visible = false;
                 rubberBandRec3.visible = false;
                 rubberBandRec4.visible = false;
 
             }
-hasBeenPressedAndHoled=false
+            hasBeenPressedAndHoled=false
 
         }
         onClicked: {
             if(mouse.button === Qt.RightButton)
             {
+                chartView.zoomOut();
+            }
+
+        }
+        onDoubleClicked: {
+            if(mouse.button === Qt.RightButton)
+            {
                 chartView.zoomReset();
-               console.log("Right button used");
-           }
-//            if(mouse.button === Qt.LeftButton)
-//            {
-//                chartView.zoomIn();
-//               console.log("Left button used");
-//           }
+            }
 
         }
 
     }
 
     PinchArea{
-                id: pa
+        id: pa
 
-                anchors.fill: parent
-                onPinchUpdated: {
-                     console.log ("pich clicked")
-                    chartView.zoomReset();
-//                    var center_x = pinch.center.x
-//                    var center_y = pinch.center.y
-//                    var width_zoom = height/pinch.scale;
-//                    var height_zoom = width/pinch.scale;
-//                    var r = Qt.rect(center_x-width_zoom/2, center_y - height_zoom/2, width_zoom, height_zoom)
-//                    chartView.zoomIn(r)
-                }
+        anchors.fill: parent
+        onPinchUpdated: {
+            console.log ("pich clicked")
+            chartView.zoomReset();
+            //                    var center_x = pinch.center.x
+            //                    var center_y = pinch.center.y
+            //                    var width_zoom = height/pinch.scale;
+            //                    var height_zoom = width/pinch.scale;
+            //                    var r = Qt.rect(center_x-width_zoom/2, center_y - height_zoom/2, width_zoom, height_zoom)
+            //                    chartView.zoomIn(r)
+        }
 
-            }
+    }
     ValueAxis {
         id: axisY1
         min: -1
@@ -183,8 +193,8 @@ hasBeenPressedAndHoled=false
         format: "hh:mm:ss"
         tickCount: 5
 
-       min:xaxis_min
-       max:xaxis
+        min:xaxis_min
+        max:xaxis
 
 
     }
@@ -203,7 +213,7 @@ hasBeenPressedAndHoled=false
         axisYRight: axisY2
         useOpenGL: chartView.openGL
     }
-//![1]
+    //![1]
 
     //![2]
     Timer {
@@ -216,20 +226,33 @@ hasBeenPressedAndHoled=false
             backend.update(chartView.series(1),1);
             if(!chartView.isZoomed())
             {
-            xaxis=new Date()
-            var today = new Date();
-            var ONE_HOUR =  nMin * 60 * 1000; /* ms */
-            today.setDate(today.getDate()-ONE_HOUR)
+                xaxis=new Date()
+                var today = new Date();
+                //deltaX =  10 * 1000; /* ms */
+                //today.setDate(today.getDate()-deltaX)
 
 
-            xaxis_min=new Date(new Date() - ONE_HOUR)
+
+                //if(deltaX!==0)
+                //  xaxis_min = xaxis - new Date(deltaX);
+                //else
+                xaxis_min=new Date(new Date() - deltaX)
             }
         }
     }
     //![2]
 
     //![3]
-    function autoscale(enabled)
+    function resizeHorizontal()
+    {
+        chartView.zoomReset()
+        deltaX = xaxis-backend.getFirst()
+        //console.log(deltaX)
+
+
+    }
+
+    function autoscale()
     {
         chartView.zoomReset();
         axisY1.max=backend.getMax()*1.05
@@ -267,11 +290,11 @@ hasBeenPressedAndHoled=false
         }
     }
 
-//    function createAxis(min, max) {
-//        // The following creates a ValueAxis object that can be then set as a x or y axis for a series
-//        return Qt.createQmlObject("import QtQuick 2.0; import QtCharts 2.0; ValueAxis { min: "
-//                                  + min + "; max: " + max + " }", chartView);
-//    }
+    //    function createAxis(min, max) {
+    //        // The following creates a ValueAxis object that can be then set as a x or y axis for a series
+    //        return Qt.createQmlObject("import QtQuick 2.0; import QtCharts 2.0; ValueAxis { min: "
+    //                                  + min + "; max: " + max + " }", chartView);
+    //    }
     //![3]
 
     function setAnimations(enabled) {

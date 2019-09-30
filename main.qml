@@ -2,6 +2,7 @@ import QtQuick 2.7
 import QtQuick.Window 2.2
 import backend 1.1
 import QtQuick.Controls 2.12
+import QtQuick.Controls.Material 2.12
 
 Item
 {
@@ -9,12 +10,14 @@ Item
     visible: true
     width: 1000
     height: 600
+    Material.theme: Material.Light
+        Material.accent: Material.Purple
+
 
     Row
     {
         id: connectRow
-        anchors.right: parent.right
-        anchors.rightMargin: 0
+        width: 300
         anchors.left: parent.left
         anchors.leftMargin: 0
         anchors.top: parent.top
@@ -26,6 +29,11 @@ Item
             width: 200
             id: portComboBox
             // currentIndex: -1
+            palette {
+                button: "white"
+
+                buttonText: "black"
+            }
             model:
                 ListModel
             {
@@ -63,6 +71,13 @@ Item
             id: connectButton
             enabled: false
             text: qsTr("Connect")
+
+            palette {
+                button: "white"
+
+                buttonText: "black"
+            }
+
             onClicked:
             {
                 backEnd.connectButtonClicked()
@@ -77,32 +92,6 @@ Item
                     portComboBox.enabled = true
                 }
             }
-        }
-
-        Switch {
-            id: imuInitDone
-            text: qsTr("Gyro Init done")
-            checked: backEnd.sta & (1<<4)
-            checkable: false
-        }
-
-        Switch {
-            id: useYawButton
-            text: qsTr("Enable Yaw Compentation")
-            onClicked: backEnd.enableYawButtonClicked(!(backEnd.sta & (1<<2)))
-            checked: backEnd.sta & (1<<2)
-        }
-
-        Switch {
-            id: element
-            text: qsTr("Gyro Compensation")
-            onClicked: backEnd.gyroConnectButtonClicked(!(backEnd.sta & (1<<3)))
-            checked: backEnd.sta & (1<<3)
-        }
-
-        Button{
-            id:autoscale
-            onClicked: scopeView.autoscale(true)
         }
 
 
@@ -147,32 +136,51 @@ Item
     }
 
 
-
-    ControlPanel {
-        id: controlPanel
-        x: 10
-        y: 10
-        width: 150
-        height: 200
-        anchors.bottomMargin: 0
-        anchors.top: connectRow.bottom
+    Row {
+        id: scopeSetting
+        height: 50
+        layoutDirection: Qt.RightToLeft
+        anchors.left: connectRow.right
+        anchors.leftMargin: 100
+        anchors.top: parent.top
         anchors.topMargin: 0
-        anchors.bottom: dialRow.top
-        anchors.left: parent.left
-        anchors.leftMargin: 0
-        //![1]
+        anchors.right: parent.right
+        anchors.rightMargin: 50
 
-        onSampleChanged: {
-            scopeView.nMin = count;
+        IconButton{
+            id:verticalScaleButton
+            filename:"icons8-resize-vertical-50"
+            tooltip: "Resize Vertical"
+            onClicked: scopeView.autoscale()
         }
-        onSeriesTypeChanged: scopeView.changeSeriesType(type);
-        onRefreshRateChanged: scopeView.changeRefreshRate(rate);
-        onAntialiasingEnabled: scopeView.antialiasing = enabled;
-        onOpenGlChanged: {
-            scopeView.openGL = enabled;
+        IconButton{
+            id:horizontalScaleButton
+            filename:"icons8-resize-horizontal-50"
+            tooltip: "Resize Horizontal"
+            onClicked: scopeView.resizeHorizontal()
+        }
+        IconButton{
+            id:expandButton
+            filename:"icons8-expand-50"
+            tooltip: "Zoom all"
+            onClicked: {
+                scopeView.resizeHorizontal()
+                scopeView.autoscale()
+            }
+        }
+        IconButton{
+            id:linePlot
+            filename:"icons8-plot-50"
+            tooltip: "Line Plot"
+            onClicked: scopeView.changeSeriesType("line");
+        }
+        IconButton{
+            id:scatterPlot
+            filename:"icons8-scatter-plot-50"
+            tooltip: "Scatter Plot"
+            onClicked: scopeView.changeSeriesType("scatter");
         }
     }
-
 
     ScopeView {
 
@@ -181,146 +189,27 @@ Item
         id: scopeView
         x: 1000
         y: 0
+        z: -1
         anchors.top: connectRow.bottom
-        anchors.bottom: dialRow.top
+        anchors.bottom: parent.bottom
         anchors.right: parent.right
-        anchors.left: controlPanel.right
-        height: mains.height
+        anchors.left: parent.left
         anchors.bottomMargin: 0
         anchors.topMargin: 0
 
-        onOpenGLSupportedChanged: {
-            if (!openGLSupported) {
-                controlPanel.openGLButton.enabled = false
-                controlPanel.openGLButton.currentSelection = 0
-            }
-        }
+//        onOpenGLSupportedChanged: {
+//            if (!openGLSupported) {
+//                controlPanel.openGLButton.enabled = false
+//                controlPanel.openGLButton.currentSelection = 0
+//            }
+//        }
     }
-
-    Row {
-        id: dialRow
-        y: 20
-        width: 400
-        height: 100
-        anchors.left: parent.left
-        anchors.leftMargin: 0
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 0
-        MyDial{
-            id:dialX
-            variable: BackEnd.Ex
-            label: "X"
-            from: -2
-            to:2
-
-        }
-        MyDial{
-            id:dialY
-            variable: BackEnd.Ey
-            label: "Y"
-            from: -2
-            to:2
-
-        }
-        MyDial{
-            id:dialZ
-            variable: BackEnd.Ez
-            label: "Z"
-            from: -2
-            to:2
-
-        }
-        MyDial{
-            id:dialRoll
-            variable: BackEnd.Eroll
-            label: "R"
-            from: -30
-            to:30
-
-        }
-        MyDial{
-            id:dialPitch
-            variable: BackEnd.Epitch
-            label: "P"
-            from: -30
-            to:30
-        }
-        MyDial{
-            id:dialYaw
-            variable: BackEnd.Eyaw
-            label: "W"
-            from: -30
-            to:30
-        }
-
-        //            Dial
-        //            {
-        //                id:setX
-        //                from: -180
-        //                to:180
-        //                value: 0
-        //                onPressedChanged:
-        //                {
-
-        //                    if (!pressed)
-        //                    {
-        //                        backEnd.setData(value,BackEnd.Ex)
-        //                    }
-
-        //                }
-        //            }
-    }
-
-    Column {
-        id: mruRow
-        x: 440
-        y: 20
-        width: 200
-        height: 79
-        anchors.right: parent.right
-        anchors.rightMargin: 0
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 0
-
-        Label {
-            id: labelPitch
-            text: qsTr("Pitch: ") + backEnd.pitch.toFixed(2) + qsTr(" degrees")
-            horizontalAlignment: Text.AlignRight
-            font.pointSize: 15
-        }
-
-        Label {
-            id: labelRoll
-            text: qsTr("Roll: ") + backEnd.roll.toFixed(2) + qsTr(" degrees")
-            horizontalAlignment: Text.AlignHCenter
-            font.pointSize: 15
-        }
-
-        Label {
-            id: labelYaw
-            text: qsTr("Yaw: ") + backEnd.yaw.toFixed(2) + qsTr(" degrees")
-            font.pointSize: 15
-        }
-    }
-
-
-
-
-
-
-
 
 }
 
 
-
-
-
-
-
-
-
 /*##^## Designer {
-    D{i:1;anchors_x:380;anchors_y:20}D{i:12;anchors_x:420}
+    D{i:1;anchors_x:380;anchors_y:20}D{i:11;anchors_height:600;anchors_x:420}D{i:8;anchors_width:709;anchors_x:204;anchors_y:55}
+D{i:14;anchors_height:600;anchors_x:420}
 }
  ##^##*/

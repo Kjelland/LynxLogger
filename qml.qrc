@@ -5,5 +5,24 @@
         <file>ControlPanel.qml</file>
         <file>MultiButton.qml</file>
         <file>ScopeView.qml</file>
+        <file>IconButton.qml</file>
+        <file>icons/icons8-add-50.png</file>
+        <file>icons/icons8-add-new-50.png</file>
+        <file>icons/icons8-color-dropper-50.png</file>
+        <file>icons/icons8-delete-bin-50.png</file>
+        <file>icons/icons8-drag-50.png</file>
+        <file>icons/icons8-engineering-50.png</file>
+        <file>icons/icons8-enlarge-50.png</file>
+        <file>icons/icons8-expand-50.png</file>
+        <file>icons/icons8-full-screen-50.png</file>
+        <file>icons/icons8-new-copy-50.png</file>
+        <file>icons/icons8-plot-50.png</file>
+        <file>icons/icons8-realtime-50.png</file>
+        <file>icons/icons8-resize-horizontal-50.png</file>
+        <file>icons/icons8-resize-vertical-50.png</file>
+        <file>icons/icons8-scatter-plot-50.png</file>
+        <file>icons/icons8-timer-50.png</file>
+        <file>icons/icons8-zoom-in-50.png</file>
+        <file>icons/icons8-zoom-out-50.png</file>
     </qresource>
 </RCC>

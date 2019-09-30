@@ -88,6 +88,7 @@ public:
 
 
 
+
 signals:
     void clearPortList();
     void addPort(const QString & portName);
@@ -99,8 +100,9 @@ signals:
 
 public slots:
     void newData();
-    float getMax(){return max;};
-    float getMin(){return min;};
+    double getMax(){return max;}
+    double getMin(){return min;}
+    double getFirst(){return logger.at(0).first().x();}
     //void generateData(int type, int rowCount, int colCount);
     void update(QAbstractSeries *series,int index);
     void setData(float input,E_variable var)
