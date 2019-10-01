@@ -8,6 +8,11 @@
 #include "stewartcontrol.h"
 #include <QtCore/QRandomGenerator>
 #include <QTimer>
+#include <QFile>
+#include <QList>
+#include <QDataStream>
+#include <QStandardPaths>
+#include <QDir>
 // #include "teststruct.h"
 
 #include <QtCharts/QAbstractSeries>
@@ -57,6 +62,43 @@ class BackEnd : public QObject
         int *dataPointer;
     };
 
+    void WriteToCSV(const QList<QVector<QPointF>>& pixels)
+    {
+        // Open csv-file
+        QString path = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+        QDir dir;
+        QFile file(path + "\\file.csv");
+        file.remove();
+        if ( file.open(QIODevice::ReadWrite | QIODevice::Text) )
+            {
+                qDebug()<<"file now exists";
+            }
+
+        // Write data to file
+        QTextStream stream(&file);
+        QString separator(",");
+        stream << QString("Time");
+        for (int n = 1; n < pixels.size(); ++n)
+        {
+            stream<<separator + QString("Data ")+QString::number(n);
+        }
+        stream << separator<<endl;
+        //qDebug()<<"rows: "<<pixels.at(0).size();
+        //qDebug()<<"colums: "<<pixels.size();
+
+        for (int i = 0; i < pixels.at(0).size()-1; ++i)
+        {
+            stream << QDateTime::fromMSecsSinceEpoch(qint64(pixels.at(0).at(i).x())).toString(Qt::ISODateWithMs);
+            for (int n = 1; n < pixels.size(); ++n)
+            {
+                stream << separator << QString::number(pixels.at(n).at(i).y());
+            }
+            stream << endl;
+        }
+
+        stream.flush();
+        file.close();
+    }
     QList<loggerInfo> loggerInformation;
     int m_index;
     int m_loggingIndex;
@@ -138,6 +180,7 @@ public slots:
         }
 
     }
+    void saveToTextfile();
     void sendData();
     void readData();
     void refreshPortList();

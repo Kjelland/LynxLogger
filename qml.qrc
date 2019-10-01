@@ -24,5 +24,6 @@
         <file>icons/icons8-timer-50.png</file>
         <file>icons/icons8-zoom-in-50.png</file>
         <file>icons/icons8-zoom-out-50.png</file>
+        <file>icons/icons8-save-50.png</file>
     </qresource>
 </RCC>

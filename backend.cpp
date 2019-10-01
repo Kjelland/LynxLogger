@@ -27,7 +27,7 @@ BackEnd::BackEnd(QObject *parent) :
     qRegisterMetaType<QAbstractSeries*>();
     qRegisterMetaType<QAbstractAxis*>();
     QVector<QPointF> points;
-    points.reserve(20000000);
+    points.reserve(20);
 
     logger.append(points);
     logger.append(points);
@@ -62,6 +62,14 @@ void BackEnd::newData()
 void BackEnd::removeSignal()
 {
 
+}
+void BackEnd::saveToTextfile()
+{
+
+    newDataTimer->stop();
+    qDebug()<<"Saving to file..";
+    WriteToCSV(logger);
+    qDebug()<<"Done!";
 }
 void BackEnd::addSignal()
 {

@@ -180,6 +180,12 @@ Item
             tooltip: "Scatter Plot"
             onClicked: scopeView.changeSeriesType("scatter");
         }
+        IconButton{
+            id:saveToFile
+            filename:"icons8-save-50"
+            tooltip: "Save to CSV"
+            onClicked: backend.saveToTextfile()
+        }
     }
 
     ScopeView {
