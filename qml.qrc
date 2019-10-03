@@ -25,5 +25,10 @@
         <file>icons/icons8-zoom-in-50.png</file>
         <file>icons/icons8-zoom-out-50.png</file>
         <file>icons/icons8-save-50.png</file>
+        <file>icons/icons8-folder-50.png</file>
+        <file>icons/icons8-pause-50.png</file>
+        <file>icons/icons8-play-50.png</file>
+        <file>icons/icons8-tesla-50.png</file>
+        <file>icons/icons8-tesla-model-3-50.png</file>
     </qresource>
 </RCC>

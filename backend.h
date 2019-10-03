@@ -35,7 +35,7 @@ class BackEnd : public QObject
     Q_PROPERTY(int sta READ sta  NOTIFY yawChanged)
 
     QTimer* newDataTimer;
-
+    QTimer* newDataTimer2;
 
 
     LynxManager _lynx;
@@ -61,6 +61,51 @@ class BackEnd : public QObject
         QString unit;
         int *dataPointer;
     };
+    void readFromCSV(QString filepath)
+    {
+        // Open csv-file
+        QString path = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+        QDir dir;
+        QFile file(path + "\\file.csv");
+        if (!file.open(QIODevice::ReadOnly)) {
+                        qDebug() << file.errorString();
+                        return ;
+                    }
+        QStringList wordList;
+        logger.clear();
+        int colums = file.readLine().split(',').count()-1;
+        qDebug()<<colums;
+        QVector<QPointF> points;
+
+        for (int c=0;c<colums;c++) {
+            logger.append(points);
+
+        }
+
+        int i=0;
+            while (!file.atEnd())
+            {
+                QByteArray line = file.readLine();
+                QByteArray xpoint = line.split(',') .first();
+                QDateTime Date = QDateTime::fromString(xpoint,Qt::ISODateWithMs);
+
+                for (int n=0;n<colums-1;n++)
+                {
+                    //qDebug()<<line.split(',').at(n+1).toDouble();
+                    logger[n].append(QPointF(qint64(Date.toMSecsSinceEpoch()),line.split(',').at(n+1).toDouble()) );
+
+                }
+                i++;
+
+            }
+
+            //
+            emit refreshChart();
+            pauseChartviewRefresh();
+            newDataTimer->start(10);
+            emit reScale();
+
+    }
 
     void WriteToCSV(const QList<QVector<QPointF>>& pixels)
     {
@@ -83,8 +128,6 @@ class BackEnd : public QObject
             stream<<separator + QString("Data ")+QString::number(n);
         }
         stream << separator<<endl;
-        //qDebug()<<"rows: "<<pixels.at(0).size();
-        //qDebug()<<"colums: "<<pixels.size();
 
         for (int i = 0; i < pixels.at(0).size()-1; ++i)
         {
@@ -103,8 +146,7 @@ class BackEnd : public QObject
     int m_index;
     int m_loggingIndex;
 
-
-
+    bool haltChartRefreshs;
 public:
     void addSignal();
     void removeSignal();
@@ -132,6 +174,8 @@ public:
 
 
 signals:
+    void reScale();
+    void refreshChart();
     void clearPortList();
     void addPort(const QString & portName);
 
@@ -139,47 +183,26 @@ signals:
     void pitchChanged();
     void yawChanged();
     void getData(float input,E_variable variable);
-
+private slots:
+    void newDataRecived();
 public slots:
-    void newData();
+
+
+    void resumeChartviewRefresh(){haltChartRefreshs = false;
+                                 qDebug()<<"SET "<<haltChartRefreshs;}
+    void pauseChartviewRefresh(){haltChartRefreshs = true;
+                                qDebug()<<"set "<<haltChartRefreshs;}
     double getMax(){return max;}
     double getMin(){return min;}
-    double getFirst(){return logger.at(0).first().x();}
+    qint64 getFirst(){qDebug()<<QDateTime::fromMSecsSinceEpoch(logger.at(0).first().x());
+        return logger.at(0).first().x();}
+    qint64 getLast(){qDebug()<<QDateTime::fromMSecsSinceEpoch(logger.at(0).last().x());
+                     return logger.at(0).last().x();}
     //void generateData(int type, int rowCount, int colCount);
     void update(QAbstractSeries *series,int index);
-    void setData(float input,E_variable var)
-    {
-        qDebug()<<input << " as "<<var;
-        updateDial=true;
-        switch (var)
-        {
-        case Ex:
-            _controlDatagram.setpointX = input;
-            _uart.send(_controlDatagram.setpointX.lynxId());
-            break;
-        case Ey:
-            _controlDatagram.setpointY = input;
-            _uart.send(_controlDatagram.setpointY.lynxId());
-            break;
-        case Ez:
-            _controlDatagram.setpointZ = input;
-            _uart.send(_controlDatagram.setpointZ.lynxId());
-            break;
-        case Eroll:
-            _controlDatagram.setpointRoll = input;
-            _uart.send(_controlDatagram.setpointRoll.lynxId());
-            break;
-        case Epitch:
-            _controlDatagram.setpointPitch = input;
-            _uart.send(_controlDatagram.setpointPitch.lynxId());
-            break;
-        case Eyaw:
-            _controlDatagram.setpointYaw = input;
-            _uart.send(_controlDatagram.setpointYaw.lynxId());
-            break;
-        }
-
-    }
+    void readFromTextfile(){ newDataTimer->stop();
+                             qDebug()<<"Read to file..";
+                                                  readFromCSV("");}
     void saveToTextfile();
     void sendData();
     void readData();

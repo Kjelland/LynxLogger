@@ -1,6 +1,6 @@
 import QtQuick 2.7
 import QtQuick.Window 2.2
-import backend 1.1
+//import backend 1.1
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.12
 
@@ -96,44 +96,45 @@ Item
 
 
     }
-    BackEnd
-    {
-        id: backEnd
+//    BackEnd
+//    {
+//        id: backEnd
 
 
-        onGetData: {
-            switch (variable)
-            {
-            case BackEnd.Ex:
-                dialX.value = input
-                break;
+//        onGetData: {
+//            switch (variable)
+//            {
+//            case BackEnd.Ex:
+//                dialX.value = input
+//                break;
 
-            case BackEnd.Ey:
-                dialY.value = input
-                break;
+//            case BackEnd.Ey:
+//                dialY.value = input
+//                break;
 
-            case BackEnd.Ez:
-                dialZ.value = input
-                break;
-            case BackEnd.Eroll:
-                dialRoll.value = input
-                break;
-            case BackEnd.Epitch:
-                dialPitch.value = input
-                break;
-            case BackEnd.Eyaw:
-                dialYaw.value = input
-                break;
-            }
-        }
+//            case BackEnd.Ez:
+//                dialZ.value = input
+//                break;
+//            case BackEnd.Eroll:
+//                dialRoll.value = input
+//                break;
+//            case BackEnd.Epitch:
+//                dialPitch.value = input
+//                break;
+//            case BackEnd.Eyaw:
+//                dialYaw.value = input
+//                break;
+//            }
+//        }
 
-        onClearPortList:
-        {
-            portListModel.clear()
-            portListModel.append({ text: qsTr("Select port") })
-        }
-        onAddPort: portListModel.append({ text: portName })
-    }
+//        onClearPortList:
+//        {
+//            console.log(("clear"));
+//            portListModel.clear()
+//            portListModel.append({ text: qsTr("Select port") })
+//        }
+//        onAddPort: portListModel.append({ text: portName })
+//    }
 
 
     Row {
@@ -185,6 +186,32 @@ Item
             filename:"icons8-save-50"
             tooltip: "Save to CSV"
             onClicked: backend.saveToTextfile()
+        }
+        IconButton{
+            id:pauseChartRefresh
+            filename:"icons8-pause-50"
+            tooltip: "Pause"
+            onClicked: {
+                console.log("pause")
+                backend.pauseChartviewRefresh()
+            }
+        }
+        IconButton{
+            id:resumeChartRefresh
+            filename:"icons8-play-50"
+            tooltip: "Play"
+            onClicked:{
+                console.log("resume")
+                backend.resumeChartviewRefresh()
+            }
+        }
+        IconButton{
+            id:loadFile
+            filename:"icons8-folder-50"
+            tooltip: "Load File"
+            onClicked:{
+                backend.readFromTextfile("")
+            }
         }
     }
 

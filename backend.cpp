@@ -14,14 +14,18 @@ BackEnd::BackEnd(QObject *parent) :
     _controlDatagram(_lynx, 0x22,"Control Datagram"),
     _feedbackDatagram(_lynx, 0x23,"Feedback Datagram"),
     m_index(-1),
-    m_loggingIndex(0)
+    m_loggingIndex(0),
+    haltChartRefreshs(false)
 
 {
+
+    connect(_uart.portPointer(), SIGNAL(readyRead()), this, SLOT(readData()),Qt::UniqueConnection
+            );
    //  _uart.open(4, 115200);
     newDataTimer = new QTimer(this);
-    connect(newDataTimer, SIGNAL(timeout()), this, SLOT(newData()));
+    connect(newDataTimer, SIGNAL(timeout()), this, SLOT(newDataRecived()),Qt::UniqueConnection);
     newDataTimer->start(10);
-    connect(_uart.portPointer(), SIGNAL(readyRead()), this, SLOT(readData()));
+
 
 
     qRegisterMetaType<QAbstractSeries*>();
@@ -38,25 +42,35 @@ BackEnd::BackEnd(QObject *parent) :
  //   generateData(0, 5, 1024);
 }
 
-void BackEnd::newData()
-{
-    emit rollChanged();
-    emit pitchChanged();
-    emit yawChanged();
 
+void BackEnd::newDataRecived()
+{
+//    emit rollChanged();
+//    emit pitchChanged();
+//    emit yawChanged();
     QDateTime momentInTime = QDateTime::currentDateTime();
 
     logger[0].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10* qSin(momentInTime.toMSecsSinceEpoch()/1000.0*6.0/10.0)+double(roll())));
     logger[1].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qCos(momentInTime.toMSecsSinceEpoch()/1000.0*6/10)+pitch()));
-    logger[2].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
-    logger[3].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
-    logger[4].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
+//    logger[2].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
+//    logger[3].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
+//    logger[4].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
 
-    m_loggingIndex--;
+//    m_loggingIndex--;
 
     //qDebug()<<"time: "<<time.msecsSinceStartOfDay();
     //qDebug()<<time;
+    if(haltChartRefreshs)
+    {
 
+
+
+    }
+    else
+    {
+        emit refreshChart();
+   }
+    //qDebug()<<"bool: "<<bool(test) <<" og "<<test++;
 
 }
 void BackEnd::removeSignal()

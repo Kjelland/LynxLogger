@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 
     viewer.setTitle(QStringLiteral("Lynx Logger"));
 
-    qmlRegisterType<BackEnd>("backend", 1, 1, "BackEnd");
+    //qmlRegisterType<BackEnd>("backend", 1, 1, "BackEnd");
 
     viewer.setSource(QUrl("qrc:/main.qml"));
     viewer.setMinimumSize(QSize(200,200));
