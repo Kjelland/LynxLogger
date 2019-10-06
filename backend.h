@@ -29,11 +29,6 @@ class BackEnd : public QObject
     Q_OBJECT
 
 
-    Q_PROPERTY(float roll READ roll NOTIFY rollChanged)
-    Q_PROPERTY(float pitch READ pitch  NOTIFY pitchChanged)
-    Q_PROPERTY(float yaw READ yaw  NOTIFY yawChanged)
-    Q_PROPERTY(int sta READ sta  NOTIFY yawChanged)
-
     QTimer* newDataTimer;
     QTimer* newDataTimer2;
 
@@ -54,99 +49,21 @@ class BackEnd : public QObject
     bool updateDial;
     QList<QVector<QPointF> > logger;
     QList<QVector<QPointF> > m_data;
+
     struct loggerInfo
     {
         int index;
         QString name;
         QString unit;
-        int *dataPointer;
     };
-    void readFromCSV(QString filepath)
-    {
-        // Open csv-file
-        QString path = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-        QDir dir;
-        QFile file(path + "\\file.csv");
-        if (!file.open(QIODevice::ReadOnly)) {
-                        qDebug() << file.errorString();
-                        return ;
-                    }
-        QStringList wordList;
-        logger.clear();
-        int colums = file.readLine().split(',').count()-1;
-        qDebug()<<colums;
-        QVector<QPointF> points;
 
-        for (int c=0;c<colums;c++) {
-            logger.append(points);
-
-        }
-
-        int i=0;
-            while (!file.atEnd())
-            {
-                QByteArray line = file.readLine();
-                QByteArray xpoint = line.split(',') .first();
-                QDateTime Date = QDateTime::fromString(xpoint,Qt::ISODateWithMs);
-
-                for (int n=0;n<colums-1;n++)
-                {
-                    //qDebug()<<line.split(',').at(n+1).toDouble();
-                    logger[n].append(QPointF(qint64(Date.toMSecsSinceEpoch()),line.split(',').at(n+1).toDouble()) );
-
-                }
-                i++;
-
-            }
-
-            //
-            emit refreshChart();
-            pauseChartviewRefresh();
-            newDataTimer->start(10);
-            emit reScale();
-
-    }
-
-    void WriteToCSV(const QList<QVector<QPointF>>& pixels)
-    {
-        // Open csv-file
-        QString path = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-        QDir dir;
-        QFile file(path + "\\file.csv");
-        file.remove();
-        if ( file.open(QIODevice::ReadWrite | QIODevice::Text) )
-            {
-                qDebug()<<"file now exists";
-            }
-
-        // Write data to file
-        QTextStream stream(&file);
-        QString separator(",");
-        stream << QString("Time");
-        for (int n = 1; n < pixels.size(); ++n)
-        {
-            stream<<separator + QString("Data ")+QString::number(n);
-        }
-        stream << separator<<endl;
-
-        for (int i = 0; i < pixels.at(0).size()-1; ++i)
-        {
-            stream << QDateTime::fromMSecsSinceEpoch(qint64(pixels.at(0).at(i).x())).toString(Qt::ISODateWithMs);
-            for (int n = 1; n < pixels.size(); ++n)
-            {
-                stream << separator << QString::number(pixels.at(n).at(i).y());
-            }
-            stream << endl;
-        }
-
-        stream.flush();
-        file.close();
-    }
     QList<loggerInfo> loggerInformation;
     int m_index;
     int m_loggingIndex;
 
-    bool haltChartRefreshs;
+    bool haltChartRefreshs,haltLogging,historicMode;
+    qint64 xFirstPause;
+    qint64 xLastPause;
 public:
     void addSignal();
     void removeSignal();
@@ -162,9 +79,6 @@ public:
     explicit BackEnd(QObject *parent = nullptr);
     ~BackEnd() { _uart.close(); }
 
-    float roll() const { return  1*QRandomGenerator::global()->generateDouble();}//_feedbackDatagram.imuRoll; }
-    float pitch() const { return 1*QRandomGenerator::global()->generateDouble();}//_feedbackDatagram.imuPitch; }
-    float yaw() const { return 1*QRandomGenerator::global()->generateDouble();}//_feedbackDatagram.imuYaw; }
 
     int sta() const {return _feedbackDatagram.sta;}
     double max;
@@ -179,31 +93,68 @@ signals:
     void clearPortList();
     void addPort(const QString & portName);
 
-    void rollChanged();
-    void pitchChanged();
-    void yawChanged();
+
     void getData(float input,E_variable variable);
-private slots:
-    void newDataRecived();
+
 public slots:
 
+    // Updates the logger list function
+    void newDataRecived();
 
-    void resumeChartviewRefresh(){haltChartRefreshs = false;
-                                 qDebug()<<"SET "<<haltChartRefreshs;}
-    void pauseChartviewRefresh(){haltChartRefreshs = true;
-                                qDebug()<<"set "<<haltChartRefreshs;}
-    double getMax(){return max;}
-    double getMin(){return min;}
-    qint64 getFirst(){qDebug()<<QDateTime::fromMSecsSinceEpoch(logger.at(0).first().x());
-        return logger.at(0).first().x();}
-    qint64 getLast(){qDebug()<<QDateTime::fromMSecsSinceEpoch(logger.at(0).last().x());
-                     return logger.at(0).last().x();}
-    //void generateData(int type, int rowCount, int colCount);
+    // Starts the chartview refresh emit
+    void resumeChartviewRefresh(){ haltChartRefreshs = false; }
+
+    // Stops the chartview refresh emit and store the current x axis values
+    void pauseChartviewRefresh()
+    {
+        xLastPause=getLastX();
+        xFirstPause=getFirstX();
+        haltChartRefreshs = true;
+    }
+    // Enable the logger append
+    void resumeLogging(){haltLogging = false;historicMode=false;}
+
+    // Disable the logger append
+    void pauseLogging(){haltLogging = true;}
+
+    // Returns the max Y axis
+    double getMaxY() { return max; }
+
+    // Returns the min Y axis
+    double getMinY() { return min; }
+
+    // Resets the min and max Y axis
+    void resetY() { max = 0; min = 0; }
+
+    // Get the first Xaxis data. Dependant on realtime or history logging
+    qint64 getFirstX()
+    {
+        if(haltChartRefreshs && !historicMode)
+            return xFirstPause;
+        else
+            return qint64(logger.at(0).first().x());
+    }
+
+    // Get the last Xaxis data. Dependant on realtime or history logging
+    qint64 getLastX()
+    {
+        if(haltChartRefreshs && !historicMode)
+            return xLastPause;
+        else
+            return qint64(logger.at(0).last().x());
+    }
+
+    // Get signalText
+    QString getSignalText(int index) { return loggerInformation.at(index).name; }
+
+    // Actual update function from QML on chartview
     void update(QAbstractSeries *series,int index);
-    void readFromTextfile(){ newDataTimer->stop();
-                             qDebug()<<"Read to file..";
-                                                  readFromCSV("");}
-    void saveToTextfile();
+
+
+
+    void writeToCSV(QString filepath);
+    void readFromCSV(QString filepath);
+
     void sendData();
     void readData();
     void refreshPortList();

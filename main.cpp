@@ -5,8 +5,9 @@
 #include <QtQml/QQmlContext>
 int main(int argc, char *argv[])
 {
-   // QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
+    QCoreApplication::setOrganizationName("Some organization");
     QApplication app(argc, argv);
 
     QQuickView viewer;
@@ -23,7 +24,6 @@ int main(int argc, char *argv[])
     QObject::connect(viewer.engine(), &QQmlEngine::quit, &viewer, &QWindow::close);
 
     viewer.setTitle(QStringLiteral("Lynx Logger"));
-
     //qmlRegisterType<BackEnd>("backend", 1, 1, "BackEnd");
 
     viewer.setSource(QUrl("qrc:/main.qml"));

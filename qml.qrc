@@ -30,5 +30,9 @@
         <file>icons/icons8-play-50.png</file>
         <file>icons/icons8-tesla-50.png</file>
         <file>icons/icons8-tesla-model-3-50.png</file>
+        <file>icons/icons8-delete-50.png</file>
+        <file>icons/icons8-hand-50.png</file>
+        <file>icons/icons8-multiplication-50.png</file>
+        <file>icons/icons8-reduce-50.png</file>
     </qresource>
 </RCC>

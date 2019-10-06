@@ -15,7 +15,9 @@ BackEnd::BackEnd(QObject *parent) :
     _feedbackDatagram(_lynx, 0x23,"Feedback Datagram"),
     m_index(-1),
     m_loggingIndex(0),
-    haltChartRefreshs(false)
+    haltChartRefreshs(false),
+    haltLogging(false),
+    historicMode(false)
 
 {
 
@@ -26,10 +28,22 @@ BackEnd::BackEnd(QObject *parent) :
     connect(newDataTimer, SIGNAL(timeout()), this, SLOT(newDataRecived()),Qt::UniqueConnection);
     newDataTimer->start(10);
 
+    // SETUP LOGGING
 
+    loggerInformation.append(loggerInfo{0,"Voltage",""});
+    loggerInformation.append(loggerInfo{0,"Current",""});
+    loggerInformation.append(loggerInfo{0,"Power",""});
+    loggerInformation.append(loggerInfo{0,"Flux",""});
+    loggerInformation.append(loggerInfo{0,"Pressure",""});
+//    loggerInformation[0].name = "Voltage";
+//    loggerInformation[0].index = 0;
 
-    qRegisterMetaType<QAbstractSeries*>();
-    qRegisterMetaType<QAbstractAxis*>();
+//    loggerInformation[1].name = "Current";
+//    loggerInformation[1].index = 1;
+
+//    loggerInformation[2].name = "Power";
+//    loggerInformation[2].index = 2;
+
     QVector<QPointF> points;
     points.reserve(20);
 
@@ -45,46 +59,106 @@ BackEnd::BackEnd(QObject *parent) :
 
 void BackEnd::newDataRecived()
 {
-//    emit rollChanged();
-//    emit pitchChanged();
-//    emit yawChanged();
     QDateTime momentInTime = QDateTime::currentDateTime();
-
-    logger[0].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10* qSin(momentInTime.toMSecsSinceEpoch()/1000.0*6.0/10.0)+double(roll())));
-    logger[1].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qCos(momentInTime.toMSecsSinceEpoch()/1000.0*6/10)+pitch()));
-//    logger[2].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
-//    logger[3].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
-//    logger[4].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qSin(momentInTime.toMSecsSinceEpoch()/1000*6/10)+yaw()));
-
-//    m_loggingIndex--;
-
-    //qDebug()<<"time: "<<time.msecsSinceStartOfDay();
-    //qDebug()<<time;
-    if(haltChartRefreshs)
+    if(!haltLogging)
     {
-
-
-
+        logger[0].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10* qSin(momentInTime.toMSecsSinceEpoch()/1000.0*6.0/10.0)+double(1*QRandomGenerator::global()->generateDouble())));
+        logger[1].append(QPointF(momentInTime.toMSecsSinceEpoch(), 10*qCos(momentInTime.toMSecsSinceEpoch()/1000.0*6/10)+1*QRandomGenerator::global()->generateDouble()));
+        logger[2].append(QPointF(momentInTime.toMSecsSinceEpoch(), 7*qSin(momentInTime.toMSecsSinceEpoch()/1000.0*6/9)+0.2*QRandomGenerator::global()->generateDouble()));
+        logger[3].append(QPointF(momentInTime.toMSecsSinceEpoch(), 5*qCos(momentInTime.toMSecsSinceEpoch()/1000.0*6/7)+0.1*QRandomGenerator::global()->generateDouble()));
+        logger[4].append(QPointF(momentInTime.toMSecsSinceEpoch(), 4*qSin(qCos(momentInTime.toMSecsSinceEpoch()/1000.0*6/3)+0.4*QRandomGenerator::global()->generateDouble())));
     }
-    else
+
+    if(!haltChartRefreshs)
     {
         emit refreshChart();
    }
-    //qDebug()<<"bool: "<<bool(test) <<" og "<<test++;
 
+}
+void BackEnd::readFromCSV(QString filepath)
+{
+    // Open csv-file
+    pauseLogging();
+    pauseChartviewRefresh();
+    QString path = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QDir dir;
+    //QFile file(path + "\\file.csv");
+    std::string x =filepath.toStdString().substr(filepath.toStdString().find("///") + 3);
+
+    QFile file(QString::fromUtf8(x.c_str()));
+    if (!file.open(QIODevice::ReadOnly)) {
+                    qDebug() << file.errorString();
+                    return ;
+                }
+    QStringList wordList;
+    logger.clear();
+    int colums = file.readLine().split(',').count()-1;
+
+    QVector<QPointF> points;
+
+    for (int c=0;c<colums;c++)
+    {
+        logger.append(points);
+    }
+    while (!file.atEnd())
+    {
+        QByteArray line = file.readLine();
+        QByteArray xpoint = line.split(',') .first();
+        QDateTime Date = QDateTime::fromString(xpoint,Qt::ISODateWithMs);
+        //qDebug()<<line;
+        for (int n=0;n<colums-1;n++)
+        {
+            logger[n].append(QPointF(qint64(Date.toMSecsSinceEpoch()),line.split(',').at(n+1).toDouble()));
+        }
+    }
+
+    historicMode=true;
+    emit refreshChart();
+    emit reScale();
+}
+
+void BackEnd::writeToCSV(QString filepath)
+{
+    // Open csv-file
+    pauseLogging();
+    QString path = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QDir dir;
+    QFile file(path + "\\file.csv");
+    file.remove();
+    if ( !file.open(QIODevice::ReadWrite | QIODevice::Text) )
+    {
+        qDebug() << file.errorString();
+        return ;
+    }
+
+    // Write data to file
+    QTextStream stream(&file);
+    QString separator(",");
+    stream << QString("Time");
+    for (int n = 1; n < logger.size(); ++n)
+    {
+        stream<<separator + QString("Data ")+QString::number(n);
+    }
+    stream << separator<<endl;
+
+    for (int i = 0; i < logger.at(0).size()-1; ++i)
+    {
+        stream << QDateTime::fromMSecsSinceEpoch(qint64(logger.at(0).at(i).x())).toString(Qt::ISODateWithMs);
+        for (int n = 0; n < logger.size()-1; ++n)
+        {
+            stream << separator << QString::number(logger.at(n).at(i).y());
+        }
+        stream << endl;
+    }
+    stream.flush();
+    file.close();
+    resumeLogging();
 }
 void BackEnd::removeSignal()
 {
 
 }
-void BackEnd::saveToTextfile()
-{
 
-    newDataTimer->stop();
-    qDebug()<<"Saving to file..";
-    WriteToCSV(logger);
-    qDebug()<<"Done!";
-}
 void BackEnd::addSignal()
 {
     QVector<QPointF> points;
@@ -116,13 +190,7 @@ void BackEnd::readData()
 
         if(_receiveInfo.state == eNewDataReceived)
         {
-            //qDebug()<<_feedbackDatagram.sta;
-            //qDebug()<<"XYZ: "<<_feedbackDatagram.feedbackX<<" : "<<_feedbackDatagram.feedbackY<<" : "<<_feedbackDatagram.feedbackZ;
-            //qDebug()<<"RPY: "<<_feedbackDatagram.feedbackRoll<<" : "<<_feedbackDatagram.feedbackPitch<<" : "<<_feedbackDatagram.feedbackYaw;
-            //qDebug()<<"roll: "<<_feedbackDatagram.imuRoll<<" Pitch: "<<_feedbackDatagram.imuPitch<<" Yaw:"<<_feedbackDatagram.imuYaw;
-            emit rollChanged();
-            emit pitchChanged();
-            emit yawChanged();
+
             if(updateDial || _feedbackDatagram.sta & (1<<3))
             {
                 this->getData(_feedbackDatagram.feedbackX,Ex);

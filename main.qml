@@ -3,7 +3,8 @@ import QtQuick.Window 2.2
 //import backend 1.1
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.12
-
+//import QtQuick.Dialogs 1.0
+import Qt.labs.platform 1.1
 Item
 {
     id:mains
@@ -11,9 +12,24 @@ Item
     width: 1000
     height: 600
     Material.theme: Material.Light
-        Material.accent: Material.Purple
-
-
+    Material.accent: Material.Purple
+    property bool fileRead: false
+    FileDialog {
+        id: fileDialog
+        title: "Please choose a file"
+        //folder:   StandardPaths.standardLocations(StandardPaths.PicturesLocation)
+        nameFilters: [ "Text files (*.csv)" ]
+        onAccepted: {
+            //console.log("You chose: " + fileDialog.fileUrl)
+            if(fileRead)
+                backend.readFromCSV(fileDialog.file)
+            else
+                backend.writeToCSV(fileDialog.file)
+        }
+        onRejected: {
+            console.log("Canceled")
+        }
+    }
     Row
     {
         id: connectRow
@@ -96,45 +112,15 @@ Item
 
 
     }
-//    BackEnd
-//    {
-//        id: backEnd
 
-
-//        onGetData: {
-//            switch (variable)
-//            {
-//            case BackEnd.Ex:
-//                dialX.value = input
-//                break;
-
-//            case BackEnd.Ey:
-//                dialY.value = input
-//                break;
-
-//            case BackEnd.Ez:
-//                dialZ.value = input
-//                break;
-//            case BackEnd.Eroll:
-//                dialRoll.value = input
-//                break;
-//            case BackEnd.Epitch:
-//                dialPitch.value = input
-//                break;
-//            case BackEnd.Eyaw:
-//                dialYaw.value = input
-//                break;
-//            }
-//        }
-
-//        onClearPortList:
-//        {
-//            console.log(("clear"));
-//            portListModel.clear()
-//            portListModel.append({ text: qsTr("Select port") })
-//        }
-//        onAddPort: portListModel.append({ text: portName })
-//    }
+    //        onClearPortList:
+    //        {
+    //            console.log(("clear"));
+    //            portListModel.clear()
+    //            portListModel.append({ text: qsTr("Select port") })
+    //        }
+    //        onAddPort: portListModel.append({ text: portName })
+    //    }
 
 
     Row {
@@ -185,7 +171,11 @@ Item
             id:saveToFile
             filename:"icons8-save-50"
             tooltip: "Save to CSV"
-            onClicked: backend.saveToTextfile()
+            onClicked:
+            {
+                fileRead=false
+                fileDialog.visible = true
+            }
         }
         IconButton{
             id:pauseChartRefresh
@@ -210,7 +200,33 @@ Item
             filename:"icons8-folder-50"
             tooltip: "Load File"
             onClicked:{
-                backend.readFromTextfile("")
+                fileRead=true
+                fileDialog.visible = true
+
+            }
+        }
+        IconButton{
+            id:addSignal
+            filename:"icons8-add-new-50"
+            tooltip: "Add signal"
+            onClicked:{
+                if(scopeView.numberOfSignals<5)
+                scopeView.numberOfSignals++
+                scopeView.changeSeriesType("line")
+
+
+            }
+        }
+        IconButton{
+            id:removeSignal
+            filename:"icons8-reduce-50"
+            tooltip: "Remove signal"
+            onClicked:{
+                if(scopeView.numberOfSignals>1)
+                scopeView.numberOfSignals--
+                scopeView.changeSeriesType("line")
+
+
             }
         }
     }
@@ -230,12 +246,12 @@ Item
         anchors.bottomMargin: 0
         anchors.topMargin: 0
 
-//        onOpenGLSupportedChanged: {
-//            if (!openGLSupported) {
-//                controlPanel.openGLButton.enabled = false
-//                controlPanel.openGLButton.currentSelection = 0
-//            }
-//        }
+        //        onOpenGLSupportedChanged: {
+        //            if (!openGLSupported) {
+        //                controlPanel.openGLButton.enabled = false
+        //                controlPanel.openGLButton.currentSelection = 0
+        //            }
+        //        }
     }
 
 }

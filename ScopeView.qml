@@ -45,6 +45,7 @@ ChartView {
     property var xaxis_min: new Date()
     property var nMin : 1
     property var deltaX :10000 //10*1000ms delta time
+    property var numberOfSignals: 2
     onOpenGLChanged: {
         if (openGLSupported) {
             series("signal 1").useOpenGL = openGL;
@@ -61,8 +62,12 @@ ChartView {
         target: backend
 
         onRefreshChart: {
-            backend.update(chartView.series(0),0);
-            backend.update(chartView.series(1),1);
+            for(var n=0;n<numberOfSignals;n++)
+            {
+                backend.update(chartView.series(n),n);
+            }
+
+            //backend.update(chartView.series(1),1);
             if(!chartView.isZoomed())
             {
 
@@ -144,14 +149,26 @@ MouseArea{
         rubberBandRec2.height = rubberBandRec2.y - mouseY;
         rubberBandRec3.height = mouseY - rubberBandRec3.y;
         rubberBandRec4.height = mouseY - rubberBandRec4.y;
+        if(rubberBandRec1.height<50)
+            rubberBandRec1.height=1;
+        if(rubberBandRec2.height<50)
+            rubberBandRec2.height=1;
+        if(rubberBandRec3.height<50)
+            rubberBandRec3.height=1;
+        if(rubberBandRec4.height<50)
+            rubberBandRec4.height=1;
     }
     onReleased: {
         if(hasBeenPressedAndHoled && mouse.button === Qt.LeftButton)
         {
 
-            console.log("been released")
+
             var x = rubberBandRec4.x-(rubberBandRec4.width<0)*Math.abs(rubberBandRec4.width);
             var y = rubberBandRec4.y-(rubberBandRec4.height<0)*Math.abs(rubberBandRec4.height);
+            if(rubberBandRec4.height==1)
+            rubberBandRec4.height=scopeView.plotArea.height
+
+
             if (Math.abs(rubberBandRec4.width*rubberBandRec4.height)>100)
                 chartView.zoomIn(Qt.rect(x, y, Math.abs(rubberBandRec4.width),
                                          Math.abs(rubberBandRec4.height)));
@@ -212,14 +229,10 @@ ValueAxis {
 }
 DateTimeAxis {
     id:axisX
-    //format: "mm hh mm ss"
     format: "hh:mm:ss"
     tickCount: 5
-
     min:xaxis_min
     max:xaxis
-
-
 }
 
 LineSeries {
@@ -240,22 +253,18 @@ LineSeries {
 function resizeHorizontal()
 {
     chartView.zoomReset()
-
-    //deltaX = backend.getLast()-backend.getFirst()
-    xaxis=new Date(backend.getLast());
-    xaxis_min=new Date(backend.getFirst())
-    deltaX = backend.getLast() - backend.getFirst()
-
-
+    xaxis=new Date(backend.getLastX());
+    xaxis_min=new Date(backend.getFirstX())
+    deltaX = backend.getLastX() - backend.getFirstX()
 }
 
 function autoscale()
 {
     chartView.zoomReset();
-    axisY1.max=backend.getMax()*1.05
-    axisY1.min=backend.getMin()*1.05
-    axisY2.max=backend.getMax()*1.05
-    axisY2.min=backend.getMin()*1.05
+    axisY1.max=backend.getMaxY()*1.05
+    axisY1.min=backend.getMinY()*1.05
+    axisY2.max=backend.getMaxY()*1.05
+    axisY2.min=backend.getMinY()*1.05
 }
 
 function changeSeriesType(type) {
@@ -264,14 +273,18 @@ function changeSeriesType(type) {
     // Create two new series of the correct type. Axis x is the same for both of the series,
     // but the series have their own y-axes to make it possible to control the y-offset
     // of the "signal sources".
-    if (type == "line") {
-        var series1 = chartView.createSeries(ChartView.SeriesTypeLine, "signal 1",
-                                             axisX, axisY1);
-        series1.useOpenGL = chartView.openGL
+    if (type === "line") {
+        for(var n=0; n<numberOfSignals;n++)
+        {
+           var series1 = chartView.createSeries(ChartView.SeriesTypeLine, backend.getSignalText(n), axisX, axisY1);
+            series1.useOpenGL = true
+        }
 
-        var series2 = chartView.createSeries(ChartView.SeriesTypeLine, "signal 2",
-                                             axisX, axisY2);
-        series2.useOpenGL = chartView.openGL
+
+
+        //var series2 = chartView.createSeries(ChartView.SeriesTypeLine, "signal 2",
+                                             //axisX, axisY2);
+        //series2.useOpenGL =true
     } else {
         var series1 = chartView.createSeries(ChartView.SeriesTypeScatter, "signal 1",
                                              axisX, axisY1);
